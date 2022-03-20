@@ -1,7 +1,18 @@
 const { performance } = require('perf_hooks');
 const prompt = require("prompt-sync")({ sigint: true });
 
-function range(end, start = 0, step = 1) {
+const readline = require("readline");
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+range()
+
+
+
+
+function range(end , start = 0, step = 1) {
   let arr = []
 
   for (let i = start; i < end; i += step) {
@@ -205,10 +216,10 @@ function GameState() {
         else if (Board[i + forward] == '.') {
           legalMoves.push([i, i + forward])
         }
-        else if (this.Captures.includes(Board[i + forward + this.E])) {
+        if (this.Captures.includes(Board[i + forward + this.E])) {
           legalMoves.push([i, i + forward + this.E])
         }
-        else if (this.Captures.includes(Board[i + forward + this.W])) {
+        if (this.Captures.includes(Board[i + forward + this.W])) {
           legalMoves.push([i, i + forward + this.W])
         }
       }
@@ -495,14 +506,15 @@ function SearchAndEval() {
       }
       else if (Board[i].toLowerCase() in this.pieceValues) {
 
-        sum -= this.pieceValues[Board[i].toLowerCase()]
-        sum -= this.pst[Board[i]][i]
+        sum += -1*this.pieceValues[Board[i].toLowerCase()]
+        sum += -1*this.pst[Board[i]][i]
 
       }
 
     }
     return sum
   }
+
 
   this.gameOver = function(Board) {
     let k_count = 0
@@ -731,6 +743,8 @@ function humanMoveMaker(string) {
 
 while (true) {
   let computerMove = S.IterarativeDeepening(gs, -2 * S.mate, 2 * S.mate, true, 850)
+  console.log(readableMoves(gs.GenMoves(gs.Board,true)))
+  console.log('yo')
   gs.Board = gs.MakeMove(gs.Board, computerMove)
 
   // player gameloop
@@ -742,15 +756,10 @@ while (true) {
   gs.Board = gs.MakeMove(gs.Board, computerReadableMove)
 
 
-
-
-
+  
 
 }
 
 
-console.log("this is a messsage for the conosole")
-
-readableMoves([[1, 2], [2, 3]])
 
 
