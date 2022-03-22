@@ -561,6 +561,10 @@ function SearchAndEval() {
 
     return moves
   }
+
+  this.transTable = {
+    
+  }
   this.Search = function(gs, depth, alpha, beta, maximizingPlayer, iterMove = 0) {
     let moves = S.sortMoves(gs.Board,gs.GenMoves(gs.Board, maximizingPlayer))
     //let moves = gs.GenMoves(gs.Board,maximizingPlayer)
@@ -584,7 +588,7 @@ function SearchAndEval() {
 
     if ((depth == 0) || this.gameOver(gs.Board)) {
       //console.log("we are returning, our depth is", depth, "and out evaluation is", this.Evaluate(gs.Board))
-      this.currentSearchInfo.nodes++
+      //this.currentSearchInfo.nodes++
       return [this.Evaluate(gs.Board), []]
     }
 
@@ -598,7 +602,22 @@ function SearchAndEval() {
         const startPiece = gs.Board[move[0]]
         const endPiece = gs.Board[move[1]]
         gs.Board = gs.MakeMove(gs.Board, move)
-        const eval = this.Search(gs, depth - 1, alpha, beta, false)[0]
+//        check if this new position is in the transposition table
+        let eval
+        if (gs.Board in this.transTable)
+        { // we are inside the table
+          eval = this.transTable[gs.Board] 
+        }
+        else
+        { // we are no in the transpition table
+       
+          eval = this.Search(gs, depth - 1, alpha, beta, false)[0]
+          // need to add position and eval to table
+          
+          
+          this.transTable[gs.Board] = eval
+        }
+        // const eval = this.Search(gs, depth - 1, alpha, beta, false)[0]
         gs.Board = gs.UndoMove(gs.Board, move, startPiece, endPiece)
 
         if (eval > maxEval) {
@@ -629,7 +648,19 @@ function SearchAndEval() {
         const startPiece = gs.Board[move[0]]
         const endPiece = gs.Board[move[1]]
         gs.Board = gs.MakeMove(gs.Board, move)
-        const eval = this.Search(gs, depth - 1, alpha, beta, true)[0]
+        let eval
+        if (gs.Board in this.transTable)
+        { // we are inside the table
+          eval = this.transTable[gs.Board] 
+        }
+        else
+        { // we are no in the transpition table
+       
+          eval = this.Search(gs, depth - 1, alpha, beta, false)[0]
+          // need to add position and eval to table
+          this.transTable[gs.Board] = eval
+        }        
+        //const eval = this.Search(gs, depth - 1, alpha, beta, true)[0]
         gs.Board = gs.UndoMove(gs.Board, move, startPiece, endPiece)
 
         if (eval < minEval) {
@@ -649,13 +680,21 @@ function SearchAndEval() {
     }
   }
 
+  
+
   this.IterarativeDeepening = function(gs, alpha, beta, maximizingPlayer, time) {
     const startTime = new Date().getTime()
     let move = 0
     for (let currentDepth = 1; ; currentDepth++) {
       console.log("current depth is,", currentDepth, "we are passing in the move", readableMoves([move]))
+      this.transTable = {}
+      
       const search = this.Search(gs, currentDepth, alpha, beta, maximizingPlayer, move) // returns a eval and a move
+      console.log(`this transposition table for depth ${currentDepth} is `)
+
       move = search[1]
+      const eval = search[0]
+      console.log(`the depth is ${currentDepth} and the eval of the best move is ${eval}`)
       //console.log('search is ', search)
       //maximizingPlayer = !maximizingPlayer
 
@@ -729,10 +768,6 @@ while (true) {
   let computerReadableMove = readMove(stringArrayMove)
   //console.log(computerReadableMove)
   gs.Board = gs.MakeMove(gs.Board, computerReadableMove)
-
-
-  
-
 }
 
 
