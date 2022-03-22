@@ -1,14 +1,16 @@
-const { performance } = require('perf_hooks');
-const prompt = require("prompt-sync")({ sigint: true });
+const readline = require('readline');
 
-const readline = require("readline");
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+function readInput() {
+    const interface = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
 
-
-
+    return new Promise(resolve => interface.question("Please provide next input: ", answer => {
+        interface.close();
+        resolve(answer);
+    }))
+}
 
 
 
@@ -118,16 +120,6 @@ function readMove(move) {
 
   return readableMove
 }
-
-
-
-
-
-
-
-
-
-
 
 function rotateString(String) {
   newBoard = Board.slice()
@@ -568,42 +560,41 @@ function SearchAndEval() {
   this.Search = function(gs, depth, alpha, beta, maximizingPlayer, iterMove = 0) {
     let moves = S.sortMoves(gs.Board,gs.GenMoves(gs.Board, maximizingPlayer))
     //let moves = gs.GenMoves(gs.Board,maximizingPlayer)
-    //console.log("unedited moves are", moves)
+
 
     if (iterMove != 0) {
-      //console.log("iter mvoe is ", iterMove)
+
       const index = moves.indexOf(iterMove)
 
 
       moves.splice(index, 1)
 
       moves.unshift(iterMove)
-      //console.log('iter moves are', moves)
+
     }
-    //console.log("edited moves are", moves)
+ 
 
 
 
-    //console.log("the moves are \n", moves)
 
     if ((depth == 0) || this.gameOver(gs.Board)) {
-      //console.log("we are returning, our depth is", depth, "and out evaluation is", this.Evaluate(gs.Board))
-      //this.currentSearchInfo.nodes++
+     
       return [this.Evaluate(gs.Board), []]
     }
 
     if (maximizingPlayer) { // we are white so we want to maximize our search
-      //console.log('tt')
+
       let maxEval = -1000000
-      let bestMove
+      let bestMove 
       for (let i = 0; i < moves.length; i++) {
         this.currentSearchInfo.nodes++
         const move = moves[i]
         const startPiece = gs.Board[move[0]]
         const endPiece = gs.Board[move[1]]
         gs.Board = gs.MakeMove(gs.Board, move)
-//        check if this new position is in the transposition table
+
         let eval
+        // const eval = this.Search(gs, depth - 1, alpha, beta, false)[0]
         if (gs.Board in this.transTable)
         { // we are inside the table
           eval = this.transTable[gs.Board] 
@@ -617,7 +608,7 @@ function SearchAndEval() {
           
           this.transTable[gs.Board] = eval
         }
-        // const eval = this.Search(gs, depth - 1, alpha, beta, false)[0]
+
         gs.Board = gs.UndoMove(gs.Board, move, startPiece, endPiece)
 
         if (eval > maxEval) {
@@ -625,22 +616,18 @@ function SearchAndEval() {
           bestMove = move
         }
         if (eval > alpha) {
-          alpah = eval
+          alpha = eval
         }
         if (beta <= alpha) {
           break
         }
       }
-      //console.log("we are returing a max value of ", maxEval, "and a best move of", bestMove)
-      //console.log("best move",typeof searchInfo[1])
-      //console.log("t", typeof [1,2])
-      //console.log("we have", searchInfo[1] += [1,2])
-      this.currentSearchInfo.history.push(bestMove)
+
       return [maxEval, bestMove]
     }
     else { // we are black so we try to minimize
       let minEval = 1000000
-      let bestMove = []
+      let bestMove 
 
       for (let i = 0; i < moves.length; i++) {
         this.currentSearchInfo.nodes++
@@ -649,6 +636,8 @@ function SearchAndEval() {
         const endPiece = gs.Board[move[1]]
         gs.Board = gs.MakeMove(gs.Board, move)
         let eval
+
+        
         if (gs.Board in this.transTable)
         { // we are inside the table
           eval = this.transTable[gs.Board] 
@@ -656,11 +645,11 @@ function SearchAndEval() {
         else
         { // we are no in the transpition table
        
-          eval = this.Search(gs, depth - 1, alpha, beta, false)[0]
+          eval = this.Search(gs, depth - 1, alpha, beta, true)[0]
           // need to add position and eval to table
           this.transTable[gs.Board] = eval
         }        
-        //const eval = this.Search(gs, depth - 1, alpha, beta, true)[0]
+
         gs.Board = gs.UndoMove(gs.Board, move, startPiece, endPiece)
 
         if (eval < minEval) {
@@ -674,7 +663,7 @@ function SearchAndEval() {
           break
         }
       }
-      //console.log("we are returing a min value of ", minEval, "and a best move of", bestMove)
+
       this.currentSearchInfo.history.push(bestMove)
       return [minEval, bestMove]
     }
@@ -685,16 +674,17 @@ function SearchAndEval() {
   this.IterarativeDeepening = function(gs, alpha, beta, maximizingPlayer, time) {
     const startTime = new Date().getTime()
     let move = 0
+    
     for (let currentDepth = 1; ; currentDepth++) {
-      console.log("current depth is,", currentDepth, "we are passing in the move", readableMoves([move]))
+     
       this.transTable = {}
       
       const search = this.Search(gs, currentDepth, alpha, beta, maximizingPlayer, move) // returns a eval and a move
-      console.log(`this transposition table for depth ${currentDepth} is `)
+     
 
       move = search[1]
       const eval = search[0]
-      console.log(`the depth is ${currentDepth} and the eval of the best move is ${eval}`)
+      console.log(`the depth is ${currentDepth}, the best move ${readableMoves([move])}, and the eval of the best move is ${eval}`)
       //console.log('search is ', search)
       //maximizingPlayer = !maximizingPlayer
 
@@ -740,35 +730,32 @@ function humanMoveMaker(string) {
 
 
 
-// let allMoves = gs.GenMoves(gs.Board,gs.color)
-// gs.Board = gs.MakeMove(gs.Board, readMove(['e2','e4']))
-// gs.Board = gs.MakeMove(gs.Board, readMove(['d7','d5']))
-// console.log(gs.Board)
-// let nsd = gs.GenMoves(gs.Board,!gs.color)
-// console.log("the unsorted moves are", readableMoves(nsd))
-// let sortedMoves = readableMoves(S.sortMoves(gs.Board, nsd))
-
-// console.log("the sorted moves are", sortedMoves)
 
 
+async function loop()
+{
+  while (true) {
+    let computerMove = S.IterarativeDeepening(gs, -2 * S.mate, 2 * S.mate, true, 1000)
+    //console.log(readableMoves(gs.GenMoves(gs.Board,true)))
+    //console.log(readableMoves(S.sortMoves(gs.Board, gs.GenMoves(gs.Board, true))))
+            
+  
+    gs.Board = gs.MakeMove(gs.Board, computerMove)
+  
+    // player gameloop
+    console.log(gs.Board)
+    const playerMove = await readInput()
+    let stringArrayMove = humanMoveMaker(playerMove)
+    let computerReadableMove = readMove(stringArrayMove)
+    //console.log(computerReadableMove)
+    gs.Board = gs.MakeMove(gs.Board, computerReadableMove)
+  }
 
+  
 
-while (true) {
-  let computerMove = S.IterarativeDeepening(gs, -2 * S.mate, 2 * S.mate, true, 850)
-  console.log(readableMoves(gs.GenMoves(gs.Board,true)))
-  console.log(readableMoves(S.sortMoves(gs.Board, gs.GenMoves(gs.Board, true))))
-          
-
-  gs.Board = gs.MakeMove(gs.Board, computerMove)
-
-  // player gameloop
-  console.log(gs.Board)
-  const playerMove = prompt("enter your move in the form _start square,endsquare: ")
-  let stringArrayMove = humanMoveMaker(playerMove)
-  let computerReadableMove = readMove(stringArrayMove)
-  //console.log(computerReadableMove)
-  gs.Board = gs.MakeMove(gs.Board, computerReadableMove)
 }
+
+loop()
 
 
 
