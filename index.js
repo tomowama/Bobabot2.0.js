@@ -7,7 +7,9 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
-range()
+
+
+
 
 
 
@@ -537,49 +539,18 @@ function SearchAndEval() {
     "cache": {},
     "history": []
   }
-  this.sortMoves = function(Board, moves, color) {
-    const baseLineEval = S.Evaluate(Board)
-
+  this.sortMoves = function(Board, moves) {
+    const pieces = ['p','n','b','r','q','k','P','N','B','R','Q','K']
 
     // run a primitive 1 depth search on moves
     const tempArr = moves.slice()
     for (let i = 0; i < tempArr.length; i++) {
-
-      const startPiece = Board[tempArr[i][0]]
-      const endPiece = Board[tempArr[i][1]]
-      Board = gs.MakeMove(Board, tempArr[i])
-      let eval = S.Evaluate(Board)
-      Board = gs.UndoMove(Board, tempArr[i], startPiece, endPiece)
-      if (color) // we are white, so want out move to be more positive
-      {
-        //console.log(`the eval is ${eval} and the baseline is ${baseLineEval}`)
-        if (eval > baseLineEval + 20) {
-          moves.splice(i, 1)
-          moves.unshift(tempArr[i])
-
-          //console.log("unshfiting")
-        }
-        else if (eval < baseLineEval + 2) {
-          moves.splice(i, 1)
-          moves.push(tempArr[i])
-          //console.log("pushing")
-        }
-
-
+      if (Board[moves[i][1]] != '.')
+      { // then this is a capture so move to front
+        moves.splice(i,1)
+        moves.unshift(tempArr[i])
       }
-      else // we are black so make eval lower
-      {
-        if (eval < baseLineEval - 20) {
-          moves.splice(i, 1)
-          moves.unshift(tempArr[i])
-          //console.log("un")
-        }
-        else if (eval > baseLineEval - 2) {
-          moves.splice(i, 1)
-          moves.push(tempArr[i])
-          // console.log("unner")
-        }
-      }
+      
 
 
 
@@ -591,7 +562,8 @@ function SearchAndEval() {
     return moves
   }
   this.Search = function(gs, depth, alpha, beta, maximizingPlayer, iterMove = 0) {
-    let moves = S.sortMoves(gs.Board, gs.GenMoves(gs.Board, maximizingPlayer), maximizingPlayer)
+    let moves = S.sortMoves(gs.Board,gs.GenMoves(gs.Board, maximizingPlayer))
+    //let moves = gs.GenMoves(gs.Board,maximizingPlayer)
     //console.log("unedited moves are", moves)
 
     if (iterMove != 0) {
@@ -730,11 +702,12 @@ function humanMoveMaker(string) {
 
 
 // let allMoves = gs.GenMoves(gs.Board,gs.color)
-// gs.Board = gs.MakeMove(gs.Board, [101,89])
+// gs.Board = gs.MakeMove(gs.Board, readMove(['e2','e4']))
+// gs.Board = gs.MakeMove(gs.Board, readMove(['d7','d5']))
 // console.log(gs.Board)
 // let nsd = gs.GenMoves(gs.Board,!gs.color)
-// console.log("the unsorted moves are", gs.readableMoves(nsd))
-// let sortedMoves = gs.readableMoves(S.sortMoves(gs.Board, nsd, !gs.color))
+// console.log("the unsorted moves are", readableMoves(nsd))
+// let sortedMoves = readableMoves(S.sortMoves(gs.Board, nsd))
 
 // console.log("the sorted moves are", sortedMoves)
 
@@ -744,7 +717,9 @@ function humanMoveMaker(string) {
 while (true) {
   let computerMove = S.IterarativeDeepening(gs, -2 * S.mate, 2 * S.mate, true, 850)
   console.log(readableMoves(gs.GenMoves(gs.Board,true)))
-  console.log('yo')
+  console.log(readableMoves(S.sortMoves(gs.Board, gs.GenMoves(gs.Board, true))))
+          
+
   gs.Board = gs.MakeMove(gs.Board, computerMove)
 
   // player gameloop
