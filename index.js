@@ -137,6 +137,22 @@ function rotateString(String) {
 
 
 function GameState() {
+  
+  this.mate = 1000000
+  this.pieceValues = {
+    'p': 100,
+    'n': 300,
+    'b': 325,
+    'r': 505,
+    'q': 969,
+    'k': this.mate,
+    'P': -100,
+    'N': -300,
+    'B': -325,
+    'R': -505,
+    'Q': -969,
+    'K': -1 * this.mate
+  }
   this.Board =
     `           
            
@@ -152,6 +168,7 @@ function GameState() {
             `
   this.N = -12, this.S = 12, this.E = 1, this.W = -1, this.a8 = 26
   this.Captures = ['P', 'N', 'B', 'R', 'Q', 'K']
+  this.CapturesBlack = ['p', 'n', 'b', 'r', 'q', 'k']
   this.color = true
 
 
@@ -178,6 +195,30 @@ function GameState() {
     }
     return legalMoves
   }
+  
+  
+  this.LineBlack = function(Board, position, northOrSouth, eastOrWest, range = 8) {
+    let legalMoves = []
+    for (let i = 1; i < range; i++) {
+      let checkPos = position + (i * northOrSouth * this.N) + (i * eastOrWest * this.E)
+      //console.log("our first check pos is", checkPos, "which has ", Board[checkPos], Board[checkPos] in this.Captures)
+      if (Board[checkPos] == ' ' || Board == '\n') { // we are out of the board
+        break
+      }
+      else if (this.CapturesBlack.includes(Board[checkPos])) { // we captured something
+        legalMoves.push([position, checkPos])
+        break
+      }
+      else if (Board[checkPos] == '.') { // we are on a free square
+        legalMoves.push([position, checkPos])
+      }
+      else { // we are on the same color as self
+        break
+      }
+
+    }
+    return legalMoves
+  }
 
   this.GenMoves = function(Board, color) {
     let forward = -12
@@ -187,90 +228,162 @@ function GameState() {
       forward = 12
       doubleMoveRow = range(47, 38)
       for (let i = 26; i < 118; i++) {
-        if ((Board[i] == ' ') || (Board == '\n')) {
+        if ((Board[i] == ' ') || (Board[i] == '\n')) {
           continue
         }
-        else if (this.Captures.includes(Board[i])) { // we are a black piece 
-          Board = Board.slice(0, i) + Board[i].toLowerCase() + Board.slice(i + 1)
+        else if (Board[i] == 'P') {
+          if ((Board[i + forward] == '.' && Board[i + 2 * forward] == '.') && (doubleMoveRow.includes(i))) {
+            legalMoves.push([i, i + forward])
+            legalMoves.push([i, i + 2 * forward])
+          }
+          else if (Board[i + forward] == '.') {
+            legalMoves.push([i, i + forward])
+          }
+          if (this.CapturesBlack.includes(Board[i + forward + this.E])) {
+            legalMoves.push([i, i + forward + this.E])
+          }
+          if (this.CapturesBlack.includes(Board[i + forward + this.W])) {
+            legalMoves.push([i, i + forward + this.W])
+          }
         }
-        else { // we are white
-          Board = Board.slice(0, i) + Board[i].toUpperCase() + Board.slice(i + 1)
+        else if (Board[i] == 'N') {
+          for (n of [2 * this.N, 2 * this.S, 2 * this.E, 2 * this.W]) {
+            if ([2 * this.N, 2 * this.S].includes(n)) {
+              for (x of [this.E, this.W]) {
+                if (this.CapturesBlack.includes(Board[i + x + n]) || Board[i + x + n] == '.') {
+                  legalMoves.push([i, i + n + x])
+                }
+              }
+            }
+            else if ([2 * this.E, 2 * this.W].includes(n)) {
+              for (x of [this.N, this.S]) {
+                if (this.CapturesBlack.includes(Board[i + x + n]) || Board[i + x + n] == '.') {
+                  legalMoves.push([i, i + n + x])
+                }
+              }
+            }
+          }
+  
+        }
+  
+        else if (Board[i] == 'R') {
+          let rmoves = [this.LineBlack(Board, i, 1, 0), this.LineBlack(Board, i, -1, 0), this.LineBlack(Board, i, 0, 1), this.LineBlack(Board, i, 0, -1)]
+  
+          for (moves of rmoves) {
+            for (move of moves) {
+              legalMoves.push(move)
+            }
+          }
+        }
+        else if (Board[i] == 'B') {
+          let bmoves = [this.LineBlack(Board, i, 1, 1), this.LineBlack(Board, i, -1, 1), this.LineBlack(Board, i, 1, -1), this.LineBlack(Board, i, -1, -1)]
+  
+          for (moves of bmoves) {
+            for (move of moves) {
+              legalMoves.push(move)
+            }
+          }
+        }
+        else if (Board[i] == 'Q') {
+          let qmoves = [this.LineBlack(Board, i, 1, 0), this.LineBlack(Board, i, -1, 0), this.LineBlack(Board, i, 0, 1), this.LineBlack(Board, i, 0, -1),
+          this.LineBlack(Board, i, 1, 1), this.LineBlack(Board, i, -1, 1), this.LineBlack(Board, i, 1, -1), this.LineBlack(Board, i, -1, -1)]
+  
+          for (moves of qmoves) {
+            for (move of moves) {
+              legalMoves.push(move)
+            }
+          }
+        }
+        else if (Board[i] == 'K') {
+          let kmoves = [this.LineBlack(Board, i, 1, 0, 2), this.LineBlack(Board, i, -1, 0, 2), this.LineBlack(Board, i, 0, 1, 2), this.LineBlack(Board, i, 0, -1, 2), this.LineBlack(Board, i, 1, 1, 2), this.LineBlack(Board, i, -1, 1, 2), this.LineBlack(Board, i, 1, -1, 2), this.LineBlack(Board, i, -1, -1, 2)]
+  
+          for (moves of kmoves) {
+            for (move of moves) {
+              legalMoves.push(move)
+            }
+          }
         }
       }
+     
     }
-    for (let i = 26; i < 118; i++) {
-      if ((Board[i] == ' ') || (Board[i] == '\n')) {
-        continue
-      }
-      else if (Board[i] == 'p') {
-        if ((Board[i + forward] == '.' && Board[i + 2 * forward] == '.') && (doubleMoveRow.includes(i))) {
-          legalMoves.push([i, i + forward])
-          legalMoves.push([i, i + 2 * forward])
+    
+    
+    else // we are white
+    {
+      for (let i = 26; i < 118; i++) {
+        if ((Board[i] == ' ') || (Board[i] == '\n')) {
+          continue
         }
-        else if (Board[i + forward] == '.') {
-          legalMoves.push([i, i + forward])
+        else if (Board[i] == 'p') {
+          if ((Board[i + forward] == '.' && Board[i + 2 * forward] == '.') && (doubleMoveRow.includes(i))) {
+            legalMoves.push([i, i + forward])
+            legalMoves.push([i, i + 2 * forward])
+          }
+          else if (Board[i + forward] == '.') {
+            legalMoves.push([i, i + forward])
+          }
+          if (this.Captures.includes(Board[i + forward + this.E])) {
+            legalMoves.push([i, i + forward + this.E])
+          }
+          if (this.Captures.includes(Board[i + forward + this.W])) {
+            legalMoves.push([i, i + forward + this.W])
+          }
         }
-        if (this.Captures.includes(Board[i + forward + this.E])) {
-          legalMoves.push([i, i + forward + this.E])
-        }
-        if (this.Captures.includes(Board[i + forward + this.W])) {
-          legalMoves.push([i, i + forward + this.W])
-        }
-      }
-      else if (Board[i] == 'n') {
-        for (n of [2 * this.N, 2 * this.S, 2 * this.E, 2 * this.W]) {
-          if ([2 * this.N, 2 * this.S].includes(n)) {
-            for (x of [this.E, this.W]) {
-              if (this.Captures.includes(Board[i + x + n]) || Board[i + x + n] == '.') {
-                legalMoves.push([i, i + n + x])
+        else if (Board[i] == 'n') {
+          for (n of [2 * this.N, 2 * this.S, 2 * this.E, 2 * this.W]) {
+            if ([2 * this.N, 2 * this.S].includes(n)) {
+              for (x of [this.E, this.W]) {
+                if (this.Captures.includes(Board[i + x + n]) || Board[i + x + n] == '.') {
+                  legalMoves.push([i, i + n + x])
+                }
+              }
+            }
+            else if ([2 * this.E, 2 * this.W].includes(n)) {
+              for (x of [this.N, this.S]) {
+                if (this.Captures.includes(Board[i + x + n]) || Board[i + x + n] == '.') {
+                  legalMoves.push([i, i + n + x])
+                }
               }
             }
           }
-          else if ([2 * this.E, 2 * this.W].includes(n)) {
-            for (x of [this.N, this.S]) {
-              if (this.Captures.includes(Board[i + x + n]) || Board[i + x + n] == '.') {
-                legalMoves.push([i, i + n + x])
-              }
+  
+        }
+  
+        else if (Board[i] == 'r') {
+          let rmoves = [this.Line(Board, i, 1, 0), this.Line(Board, i, -1, 0), this.Line(Board, i, 0, 1), this.Line(Board, i, 0, -1)]
+  
+          for (moves of rmoves) {
+            for (move of moves) {
+              legalMoves.push(move)
             }
           }
         }
-
-      }
-
-      else if (Board[i] == 'r') {
-        let rmoves = [this.Line(Board, i, 1, 0), this.Line(Board, i, -1, 0), this.Line(Board, i, 0, 1), this.Line(Board, i, 0, -1)]
-
-        for (moves of rmoves) {
-          for (move of moves) {
-            legalMoves.push(move)
+        else if (Board[i] == 'b') {
+          let bmoves = [this.Line(Board, i, 1, 1), this.Line(Board, i, -1, 1), this.Line(Board, i, 1, -1), this.Line(Board, i, -1, -1)]
+  
+          for (moves of bmoves) {
+            for (move of moves) {
+              legalMoves.push(move)
+            }
           }
         }
-      }
-      else if (Board[i] == 'b') {
-        let bmoves = [this.Line(Board, i, 1, 1), this.Line(Board, i, -1, 1), this.Line(Board, i, 1, -1), this.Line(Board, i, -1, -1)]
-
-        for (moves of bmoves) {
-          for (move of moves) {
-            legalMoves.push(move)
+        else if (Board[i] == 'q') {
+          let qmoves = [this.Line(Board, i, 1, 0), this.Line(Board, i, -1, 0), this.Line(Board, i, 0, 1), this.Line(Board, i, 0, -1),
+          this.Line(Board, i, 1, 1), this.Line(Board, i, -1, 1), this.Line(Board, i, 1, -1), this.Line(Board, i, -1, -1)]
+  
+          for (moves of qmoves) {
+            for (move of moves) {
+              legalMoves.push(move)
+            }
           }
         }
-      }
-      else if (Board[i] == 'q') {
-        let qmoves = [this.Line(Board, i, 1, 0), this.Line(Board, i, -1, 0), this.Line(Board, i, 0, 1), this.Line(Board, i, 0, -1),
-        this.Line(Board, i, 1, 1), this.Line(Board, i, -1, 1), this.Line(Board, i, 1, -1), this.Line(Board, i, -1, -1)]
-
-        for (moves of qmoves) {
-          for (move of moves) {
-            legalMoves.push(move)
-          }
-        }
-      }
-      else if (Board[i] == 'k') {
-        let kmoves = [this.Line(Board, i, 1, 0, 2), this.Line(Board, i, -1, 0, 2), this.Line(Board, i, 0, 1, 2), this.Line(Board, i, 0, -1, 2), this.Line(Board, i, 1, 1, 2), this.Line(Board, i, -1, 1, 2), this.Line(Board, i, 1, -1, 2), this.Line(Board, i, -1, -1, 2)]
-
-        for (moves of kmoves) {
-          for (move of moves) {
-            legalMoves.push(move)
+        else if (Board[i] == 'k') {
+          let kmoves = [this.Line(Board, i, 1, 0, 2), this.Line(Board, i, -1, 0, 2), this.Line(Board, i, 0, 1, 2), this.Line(Board, i, 0, -1, 2), this.Line(Board, i, 1, 1, 2), this.Line(Board, i, -1, 1, 2), this.Line(Board, i, 1, -1, 2), this.Line(Board, i, -1, -1, 2)]
+  
+          for (moves of kmoves) {
+            for (move of moves) {
+              legalMoves.push(move)
+            }
           }
         }
       }
@@ -316,7 +429,13 @@ function SearchAndEval() {
     'b': 325,
     'r': 505,
     'q': 969,
-    'k': this.mate
+    'k': this.mate,
+    'P': -100,
+    'N': -300,
+    'B': -325,
+    'R': -505,
+    'Q': -969,
+    'K': -1 * this.mate
   }
 
 
@@ -492,16 +611,21 @@ function SearchAndEval() {
     let sum = 0
 
     for (let i = 26; i < 118; i++) {
-      if (Board[i] in this.pieceValues) {
+      if (!(Board[i] in this.pieceValues))
+      {
+        //console.log(`the square was ${Board[i]}`)
+        continue
+      }
+      else if (Board[i] == Board[i].toLowerCase()) {
 
         sum += this.pieceValues[Board[i]]
         sum += this.pst[Board[i]][i]
 
       }
-      else if (Board[i].toLowerCase() in this.pieceValues) {
-
-        sum += -1*this.pieceValues[Board[i].toLowerCase()]
-        sum += -1*this.pst[Board[i]][i]
+      else {
+       
+        sum += this.pieceValues[Board[i]]
+        sum -= this.pst[Board[i]][i]
 
       }
 
@@ -533,33 +657,68 @@ function SearchAndEval() {
   }
   this.sortMoves = function(Board, moves) {
     const pieces = ['p','n','b','r','q','k','P','N','B','R','Q','K']
-
+    
+    let movesWithValues = []
+    
+    let toSplice = []
+    
     // run a primitive 1 depth search on moves
-    const tempArr = moves.slice()
-    for (let i = 0; i < tempArr.length; i++) {
+
+    for (let i = 0; i < moves.length; i++) {
       if (Board[moves[i][1]] != '.')
       { // then this is a capture so move to front
-        moves.splice(i,1)
-        moves.unshift(tempArr[i])
+        //console.log(moves[i])
+        toSplice.push(i)
+//        moves.unshift(tempArr[i])
+        const diff = Math.abs(this.pieceValues[Board[moves[i][1]]]) - Math.abs(this.pieceValues[Board[moves[i][0]]])
+        const moveWithDiff = [moves[i], diff]
+        movesWithValues.push(moveWithDiff)
       }
-      
-
-
-
     }
 
-
-
+    let tempVal1
+    let sortedMoves = []
+    // now sort the moves 
+    for (let i = 0; i<movesWithValues.length-1; i++)
+      for (let x = i+1; x<movesWithValues.length; x++)
+      {
+        let min = movesWithValues[i][1]
+        let pos = i 
+        {
+          
+          if (movesWithValues[x][1] <= min)
+          {
+            pos = x
+            min = movesWithValues[x][1]
+            
+          }
+        }
+        if (i != pos)
+        {
+          tempVal1 = movesWithValues[i]
+          movesWithValues[i] = movesWithValues[pos]
+          movesWithValues[pos] = tempVal1
+        }
+        moves.splice(toSplice[i],1)
+        sortedMoves.push(movesWithValues[i][0])
+      }
+    
+   for (move of movesWithValues)
+   {
+     moves.unshift(move[0])
+   }
 
     return moves
   }
+  
+  this.principleVar = []
 
   this.transTable = {
     
   }
   this.Search = function(gs, depth, alpha, beta, maximizingPlayer, iterMove = 0) {
-    let moves = S.sortMoves(gs.Board,gs.GenMoves(gs.Board, maximizingPlayer))
-    //let moves = gs.GenMoves(gs.Board,maximizingPlayer)
+    //let moves = S.sortMoves(gs.Board,gs.GenMoves(gs.Board, maximizingPlayer))
+    let moves = gs.GenMoves(gs.Board,maximizingPlayer)
 
 
     if (iterMove != 0) {
@@ -575,7 +734,7 @@ function SearchAndEval() {
  
 
 
-
+    
 
     if ((depth == 0) || this.gameOver(gs.Board)) {
      
@@ -586,34 +745,51 @@ function SearchAndEval() {
 
       let maxEval = -1000000
       let bestMove 
+      let moveList =[]
+      let searchInfo
       for (let i = 0; i < moves.length; i++) {
-        this.currentSearchInfo.nodes++
+
         const move = moves[i]
         const startPiece = gs.Board[move[0]]
         const endPiece = gs.Board[move[1]]
         gs.Board = gs.MakeMove(gs.Board, move)
 
         let eval
+
+
+
+
         // const eval = this.Search(gs, depth - 1, alpha, beta, false)[0]
         if (gs.Board in this.transTable)
         { // we are inside the table
-          eval = this.transTable[gs.Board] 
+          searchInfo = this.transTable[gs.Board]
+          eval = searchInfo[0]
+
+           
         }
         else
         { // we are no in the transpition table
        
-          eval = this.Search(gs, depth - 1, alpha, beta, false)[0]
+          searchInfo = this.Search(gs, depth - 1, alpha, beta, false)
+          eval = searchInfo[0]
+          
+          
           // need to add position and eval to table
           
           
-          this.transTable[gs.Board] = eval
+          this.transTable[gs.Board] = [eval,searchInfo[1]]
         }
+
+
+
+       
 
         gs.Board = gs.UndoMove(gs.Board, move, startPiece, endPiece)
 
         if (eval > maxEval) {
           maxEval = eval
           bestMove = move
+          moveList = searchInfo[1]
         }
         if (eval > alpha) {
           alpha = eval
@@ -622,12 +798,14 @@ function SearchAndEval() {
           break
         }
       }
-
-      return [maxEval, bestMove]
+      moveList.unshift(bestMove)
+      return [maxEval,moveList]
     }
     else { // we are black so we try to minimize
       let minEval = 1000000
       let bestMove 
+      let moveList =[]
+      let searchInfo
 
       for (let i = 0; i < moves.length; i++) {
         this.currentSearchInfo.nodes++
@@ -638,34 +816,50 @@ function SearchAndEval() {
         let eval
 
         
+        
+        
+        
+        
         if (gs.Board in this.transTable)
         { // we are inside the table
-          eval = this.transTable[gs.Board] 
+          searchInfo = this.transTable[gs.Board]
+          eval = searchInfo[0]
+          searchInfo[1].pop()
         }
         else
         { // we are no in the transpition table
        
-          eval = this.Search(gs, depth - 1, alpha, beta, true)[0]
+          searchInfo = this.Search(gs, depth - 1, alpha, beta, true)
+          eval = searchInfo[0]
+          
           // need to add position and eval to table
-          this.transTable[gs.Board] = eval
+          this.transTable[gs.Board] = [eval, searchInfo[1]]
         }        
+        
+        
+       
+        
+        
 
         gs.Board = gs.UndoMove(gs.Board, move, startPiece, endPiece)
 
         if (eval < minEval) {
           minEval = eval
           bestMove = move
+          movesList = searchInfo[1]
         }
         if (beta <= eval) {
           beta = eval
+          //this.principleVar.push(move)
         }
         if (beta <= alpha) {
           break
         }
       }
 
-      this.currentSearchInfo.history.push(bestMove)
-      return [minEval, bestMove]
+      moveList.unshift(bestMove)
+      return [minEval, moveList]
+
     }
   }
 
@@ -678,19 +872,23 @@ function SearchAndEval() {
     for (let currentDepth = 1; ; currentDepth++) {
      
       this.transTable = {}
+      this.principleVar = []
       
       const search = this.Search(gs, currentDepth, alpha, beta, maximizingPlayer, move) // returns a eval and a move
      
-
-      move = search[1]
+      moves = search[1]
+      move = moves[0]
       const eval = search[0]
+      console.log(`the move list is`)
+      console.log(readableMoves(moves))
       console.log(`the depth is ${currentDepth}, the best move ${readableMoves([move])}, and the eval of the best move is ${eval}`)
+      //console.log(`the potential principle variation is ${this.principleVar}`)
       //console.log('search is ', search)
       //maximizingPlayer = !maximizingPlayer
 
 
       var endTime = new Date().getTime()
-      if (endTime - startTime > time) {
+      if (endTime - startTime > time || currentDepth == 5) {
         console.log("this took us", (endTime - startTime) / 1000, "seconds")
         return move
       }
@@ -713,11 +911,6 @@ function SearchAndEval() {
 
 
 
-
-const gs = new GameState()
-
-const S = new SearchAndEval()
-
 function humanMoveMaker(string) {
   let startSquare
   let endSquare
@@ -730,7 +923,30 @@ function humanMoveMaker(string) {
 
 
 
+//gs.Board = gs.MakeMove(gs.Board, readMove(['e2','e4']))
+//
+//gs.Board = gs.MakeMove(gs.Board,readMove(['d7','d5']))
+//
+//gs.Board = gs.MakeMove(gs.Board, readMove(['g8','f5']))
+//
+//gs.Board =gs.MakeMove(gs.Board, readMove(['b1','c3']))
+//
+//console.log(gs.Board)
 
+
+//console.log(readableMoves(S.sortMoves(gs.Board,gs.GenMoves(gs.Board, true))))
+//console.log(readableMoves(gs.GenMoves(gs.Board, true)))
+
+
+
+const gs = new GameState()
+
+const S = new SearchAndEval()
+
+//console.log(gs.Board[25] == gs.Board[25].toLowerCase())
+//console.log(S.Evaluate(gs.Board))
+
+//let computerMoves = S.IterarativeDeepening(gs, -2 * S.mate, 2 * S.mate, true, 1000)
 
 async function loop()
 {
@@ -750,9 +966,7 @@ async function loop()
     //console.log(computerReadableMove)
     gs.Board = gs.MakeMove(gs.Board, computerReadableMove)
   }
-
   
-
 }
 
 loop()
@@ -760,3 +974,6 @@ loop()
 
 
 
+
+// Our mvvlva take a while to run. will still speed up engine in messy positions. But a more practical way to get the information is to just store the attacked pieces when generating moves. And the attacker. So we could return moves = [[startsq, endsq, value difference]] so then we already have the value difference for each move and only have to sort them. Could also have a bunch of this.arrays 
+// which live sort the moves. e.g. this.movesdiff = ~8, would be moves where a pawn take a queen since 9 - 1 = 8. 
