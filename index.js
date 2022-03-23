@@ -716,11 +716,21 @@ function SearchAndEval() {
   this.transTable = {
     
   }
+
+
+
+
+
+
+  
   this.Search = function(gs, depth, alpha, beta, maximizingPlayer, iterMove = 0) {
-    //let moves = S.sortMoves(gs.Board,gs.GenMoves(gs.Board, maximizingPlayer))
-    let moves = gs.GenMoves(gs.Board,maximizingPlayer)
+    let moves = S.sortMoves(gs.Board,gs.GenMoves(gs.Board, maximizingPlayer))
+    //let moves = gs.GenMoves(gs.Board,maximizingPlayer)
 
-
+    if (gs.Board in this.transTable)
+    {
+      return this.transTable[gs.Board]
+    }
     if (iterMove != 0) {
 
       const index = moves.indexOf(iterMove)
@@ -760,26 +770,48 @@ function SearchAndEval() {
 
 
         // const eval = this.Search(gs, depth - 1, alpha, beta, false)[0]
-        if (gs.Board in this.transTable)
-        { // we are inside the table
-          searchInfo = this.transTable[gs.Board]
-          eval = searchInfo[0]
+        if (depth == 4 && move == readMove(['e2','e4']))
+        {
+          console.log("in")
+        }
+        // if (gs.Board in this.transTable)
+        // { // we are inside the table
+        //   searchInfo = this.transTable[gs.Board]
+        //   eval = searchInfo[0]
+
+        //   if (depth == 4)
+        //   {
+        //     console.log('ttttttttttt')
+        //     console.log(`eval is ${eval}`)
+        //     console.log(`move is ${readableMoves([move])}`)
+        //     console.log("the search info is ")
+        //     console.log(readableMoves(searchInfo[1]))
+        //   }
 
            
-        }
-        else
-        { // we are no in the transpition table
+        // }
+        // else
+        // { // we are no in the transpition table
        
-          searchInfo = this.Search(gs, depth - 1, alpha, beta, false)
-          eval = searchInfo[0]
+        //   searchInfo = this.Search(gs, depth - 1, alpha, beta, false)
+        //   eval = searchInfo[0]
+        //   if (depth == 4)
+        //   {
+        //     console.log("nnnnnnnnnnnnn")
+        //     console.log(`move is ${readableMoves([move])}`)
+        //     console.log("the search info is ")
+        //     console.log(readableMoves(searchInfo[1]))
+        //   }
           
           
-          // need to add position and eval to table
-          
-          
-          this.transTable[gs.Board] = [eval,searchInfo[1]]
-        }
+        //   this.transTable[gs.Board] = [eval,searchInfo[1]]
+        // }
 
+        
+        
+        searchInfo = this.Search(gs, depth - 1, alpha, beta, false)
+        eval = searchInfo[0]
+        
 
 
        
@@ -787,9 +819,22 @@ function SearchAndEval() {
         gs.Board = gs.UndoMove(gs.Board, move, startPiece, endPiece)
 
         if (eval > maxEval) {
+          
           maxEval = eval
           bestMove = move
-          moveList = searchInfo[1]
+          moveList = searchInfo[1].slice()
+          // if (depth ==4)
+          // {
+          //   console.log("-----------------")
+          //   console.log(`the best move is ${readableMoves([bestMove])}`)
+          //   console.log("the move list is ")
+          //   console.log(moveList)
+          //   console.log("the searchInfo is")
+          //   console.log(searchInfo[1])
+          // }
+          
+          
+          
         }
         if (eval > alpha) {
           alpha = eval
@@ -798,7 +843,17 @@ function SearchAndEval() {
           break
         }
       }
+      // if (depth == 4)
+      // {
+      //   console.log("the searchinfo is ")
+      //   console.log(readableMoves(searchInfo[1]))
+      //   console.log(readableMoves(moveList))
+      // }
       moveList.unshift(bestMove)
+      //console.log(`the current depth is ${depth} and the best move is ${readableMoves([bestMove])} and we are ${maximizingPlayer} and the move list is`)
+      //console.log(readableMoves(moveList))
+      //console.log()
+      this.transTable[gs.Board] = [maxEval, moveList]
       return [maxEval,moveList]
     }
     else { // we are black so we try to minimize
@@ -820,21 +875,30 @@ function SearchAndEval() {
         
         
         
-        if (gs.Board in this.transTable)
-        { // we are inside the table
-          searchInfo = this.transTable[gs.Board]
-          eval = searchInfo[0]
-          searchInfo[1].pop()
-        }
-        else
-        { // we are no in the transpition table
-       
-          searchInfo = this.Search(gs, depth - 1, alpha, beta, true)
-          eval = searchInfo[0]
+        // if (gs.Board in this.transTable)
+        // { // we are inside the table
+        //   searchInfo = this.transTable[gs.Board]
+        //   eval = searchInfo[0]
           
-          // need to add position and eval to table
-          this.transTable[gs.Board] = [eval, searchInfo[1]]
-        }        
+        //   //console.log(`the Search info we got from depth ${depth} and i value ${i} is ${searchInfo[1]}`)
+          
+        // }
+        // else
+        // { // we are no in the transpition table
+       
+        //   searchInfo = this.Search(gs, depth - 1, alpha, beta, true)
+          
+        
+        //   eval = searchInfo[0]
+          
+        //   // need to add position and eval to table
+        //   this.transTable[gs.Board] = [eval, searchInfo[1]]
+        // }    
+        
+        searchInfo = this.Search(gs, depth - 1, alpha, beta, true)
+          
+        
+        eval = searchInfo[0]
         
         
        
@@ -846,7 +910,8 @@ function SearchAndEval() {
         if (eval < minEval) {
           minEval = eval
           bestMove = move
-          movesList = searchInfo[1]
+          moveList = searchInfo[1].slice()
+          //console.log(`we are seting the move list to ${movesList}`)
         }
         if (beta <= eval) {
           beta = eval
@@ -856,8 +921,13 @@ function SearchAndEval() {
           break
         }
       }
-
+      
       moveList.unshift(bestMove)
+      
+      //console.log(`the current depth is ${depth} and the best move is ${readableMoves([bestMove])} and we are ${maximizingPlayer} and the move list is`)
+      //console.log(readableMoves(moveList))
+      //console.log()
+      this.transTable[gs.Board] = [minEval, moveList]
       return [minEval, moveList]
 
     }
@@ -872,23 +942,28 @@ function SearchAndEval() {
     for (let currentDepth = 1; ; currentDepth++) {
      
       this.transTable = {}
-      this.principleVar = []
-      
-      const search = this.Search(gs, currentDepth, alpha, beta, maximizingPlayer, move) // returns a eval and a move
      
+      console.log()
+      console.log("----------------")
+      console.log(`the current depth is ${currentDepth}`)
+      console.log("----------------")
+      const search = this.Search(gs, currentDepth, alpha, beta, maximizingPlayer, move) // returns a eval and a move
+      
       moves = search[1]
       move = moves[0]
       const eval = search[0]
+      console.log(`the eval is ${search[0]}`)
       console.log(`the move list is`)
       console.log(readableMoves(moves))
-      console.log(`the depth is ${currentDepth}, the best move ${readableMoves([move])}, and the eval of the best move is ${eval}`)
+      
+      // console.log(`the depth is ${currentDepth}, the best move ${readableMoves([move])}, and the eval of the best move is ${eval}`)
       //console.log(`the potential principle variation is ${this.principleVar}`)
       //console.log('search is ', search)
       //maximizingPlayer = !maximizingPlayer
 
 
       var endTime = new Date().getTime()
-      if (endTime - startTime > time || currentDepth == 5) {
+      if (endTime - startTime > time || currentDepth == 4) {
         console.log("this took us", (endTime - startTime) / 1000, "seconds")
         return move
       }
@@ -951,7 +1026,7 @@ const S = new SearchAndEval()
 async function loop()
 {
   while (true) {
-    let computerMove = S.IterarativeDeepening(gs, -2 * S.mate, 2 * S.mate, true, 1000)
+    let computerMove = S.IterarativeDeepening(gs, -2 * S.mate, 2 * S.mate, true, 100000)
     //console.log(readableMoves(gs.GenMoves(gs.Board,true)))
     //console.log(readableMoves(S.sortMoves(gs.Board, gs.GenMoves(gs.Board, true))))
             
